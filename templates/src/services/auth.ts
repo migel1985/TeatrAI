@@ -10,7 +10,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
     //console.log("Traza: auth.ts lin: 8: Login llamado con:", { email, password }); // <- traza 1
     //console.log(`Llamando a api: ${import.meta.env.VITE_API_URL}/teatrapi/default_login`)
   
-    const response = await fetch('http://localhost:8282/teatrapi/default_login', {
+    const response = await fetch('http://13.53.89.36:8282/teatrapi/default_login', {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

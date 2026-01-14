@@ -7,9 +7,19 @@ import TheaterCurtain from '@/components/TheaterCurtain';
 import { Theater, Sparkles, Plus, Menu, ChevronLeft, ChevronRight, MessageSquare, Send } from 'lucide-react';
 import { Capitulo, getCapitulos, create_capitulo_db } from '@/services/capitulos';
 import { hablarConIa } from '@/services/ia';
-import { Escena, getEscenasByCapitulo } from '@/services/escenas';
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Escena, getEscenasByCapitulo, toggleEscenaFavorite } from '@/services/escenas';
+
+
+// ✅ TIPOS ACTUALIZADOS (añade arriba con tus imports)
+interface ChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+  escenaId?: string;  // Solo para mensajes de IA
+  isFavorite: string;  // Tu campo favs
+}
+
 
 const Obra = () => {
   const location = useLocation();
@@ -23,7 +33,7 @@ const Obra = () => {
 
   // ✅ ESTADOS CHAT IA
   const [selectedCapitulo, setSelectedCapitulo] = useState<Capitulo | null>(null);
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string, isFavorite:string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
@@ -41,6 +51,11 @@ const Obra = () => {
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
+
+  // ✅ AÑADE ESTOS ESTADOS al inicio (después de estados existentes)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+
 
   // 🔧 1. CARGAR CAPÍTULOS al montar componente
   useEffect(() => {
@@ -66,8 +81,6 @@ const Obra = () => {
 
   // 🔧 2. CARGAR ESCENAS cuando cambia capítulo
   useEffect(() => {
-    console.log("🎭 Capítulo seleccionado:", selectedCapitulo?.id);
-
     if (!selectedCapitulo?.id) {
       setEscenas([]);
       setChatMessages([]);
@@ -76,26 +89,34 @@ const Obra = () => {
 
     const cargarEscenas = async () => {
       try {
-        console.log("📡 Cargando escenas para:", selectedCapitulo.id);
         setEscenasLoading(true);
         const data = await getEscenasByCapitulo(selectedCapitulo.id);
-        console.log("✅ Respuesta:", data);
         
         if (data.success && data.escenas?.length > 0) {
+          // 🔥 AQUÍ CAMBIA: incluye favs y escenaId
           const chatFormat = data.escenas.flatMap((escena: Escena) => [
-            { role: 'user' as const, content: escena.query },
-            { role: 'ai' as const, content: escena.response }
+            { role: 'user' as const, content: escena.query, isFavorite: escena.fav },
+            { 
+              role: 'ai' as const, 
+              content: escena.response,
+              escenaId: escena.id,  // ← ID para el favorito
+              isFavorite: escena.fav  // ← Tu campo favs
+            }
           ]);
           setEscenas(data.escenas);
-          setChatMessages(chatFormat);
+          setChatMessages(chatFormat as ChatMessage[]);
+          
+          // 🔥 ESTA PARTE RECUERDA LOS FAVORITOS:
+  const favIds = data.escenas
+    .filter(escena => escena.favs === "S")  // ← Filtra las que tienen "S"
+    .map(escena => escena.id);
+  setFavorites(new Set(favIds));  // ← Carga los IDs en el Set
         } else {
           setEscenas([]);
           setChatMessages([]);
         }
       } catch (err) {
         console.error('❌ Error:', err);
-        setEscenas([]);
-        setChatMessages([]);
       } finally {
         setEscenasLoading(false);
       }
@@ -118,6 +139,65 @@ const Obra = () => {
       }
     }, [chatLoading]);
 
+
+    // 🔧 NUEVA FUNCIÓN PARA MANEJAR FAVORITOS
+    const toggleFavorite = useCallback(async (escenaId: string) => {
+  setFavorites(prev => {
+    const newFavorites = new Set(prev);
+    if (newFavorites.has(escenaId)) {
+      newFavorites.delete(escenaId);
+    } else {
+      newFavorites.add(escenaId);
+    }
+    return newFavorites;
+  });
+
+  if (userId) {
+    try {
+      const result = await toggleEscenaFavorite(escenaId, userId);
+      
+      if (result.success) {
+        // ✅ CLAVE: Actualizar chatMessages con el nuevo estado
+        setChatMessages(prev => prev.map(msg => 
+          msg.escenaId === escenaId 
+            ? { ...msg, isFavorite: result.favs }  // ← Actualiza isFavorite
+            : msg
+        ));
+        
+        // Actualizar escenas locales también
+        setEscenas(prev => prev.map(e => 
+          e.id === escenaId ? {...e, favs: result.favs} : e
+        ));
+      } else {
+        // Revertir solo favorites
+        setFavorites(prev => {
+          const newFavorites = new Set(prev);
+          if (newFavorites.has(escenaId)) newFavorites.delete(escenaId);
+          else newFavorites.add(escenaId);
+          return newFavorites;
+        });
+      }
+    } catch (error) {
+      // Revertir
+      setFavorites(prev => {
+        const newFavorites = new Set(prev);
+        if (newFavorites.has(escenaId)) newFavorites.delete(escenaId);
+        else newFavorites.add(escenaId);
+        return newFavorites;
+      });
+    }
+  }
+}, [userId]);
+
+
+
+
+
+    // ✅ AÑADE ESTE useEffect para cargar favoritos al montar
+    useEffect(() => {
+      // TODO: Llamar API para cargar favoritos del usuario
+      // const cargarFavoritos = async () => { ... }
+    }, [userId]);
 
   const handleCrearCapitulo = async () => {
     try {
@@ -202,6 +282,23 @@ const Obra = () => {
   if (!userId) {
     return <div className="flex items-center justify-center min-h-screen">No autorizado.</div>;
   }
+
+  const scenePairs: { user: ChatMessage; ai: ChatMessage }[] = [];
+
+for (let i = 0; i < chatMessages.length; i += 2) {
+  const userMsg = chatMessages[i] as ChatMessage | undefined;
+  const aiMsg = chatMessages[i + 1] as ChatMessage | undefined;
+
+  if (!userMsg || !aiMsg) continue;
+  if (userMsg.role !== 'user' || aiMsg.role !== 'ai') continue;
+
+  scenePairs.push({ user: userMsg, ai: aiMsg });
+}
+
+const filteredPairs = showOnlyFavorites
+  ? scenePairs.filter(({ ai }) => ai.escenaId && favorites.has(ai.escenaId))
+  : scenePairs;
+
 
   return (
     <>
@@ -352,9 +449,27 @@ const Obra = () => {
                       <MessageSquare className="w-5 h-5 text-gold" />
                       <span className="font-semibold text-gold">{selectedCapitulo.titulo}</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {selectedCapitulo.updated_at}
-                    </span>
+                    <div className="flex items-center gap-4">
+                    
+                    {/* 🔥 BOTÓN FILTRAR SOLO CAQUITAS */}
+                    <div className="flex items-center gap-4">
+                    
+                    <button
+                      onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+                        showOnlyFavorites
+                          ? 'bg-gold/30 text-gold border-2 border-gold/50 shadow-lg'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-gold/20 hover:text-gold'
+                      }`}
+                    >
+                      <span className="text-lg">💩</span>
+                      <span>({favorites.size})</span>
+                    </button>
+                    
+                    <span className="text-sm text-muted-foreground">{selectedCapitulo.updated_at}</span>
+                  </div>
+                    
+                  </div>
                   </div>
                 </div>
 
@@ -373,17 +488,46 @@ const Obra = () => {
                       </div>
                     </div>
                   ) : (
-                    chatMessages.map((msg, idx) => (
-                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                        <div className={`max-w-2xl p-4 rounded-2xl ${
-                          msg.role === 'ai'
-                            ? 'bg-card/95 border border-gold/20 shadow-lg'
-                            : 'bg-gradient-to-r from-primary to-gold text-primary-foreground shadow-lg'
-                        }`}>
-                          <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                        </div>
-                      </div>
-                    ))
+                    // desde aquí
+                    // ✅ MODIFICA el render de mensajes 
+                  filteredPairs.map(({ user, ai }, pairIdx) => (
+    <React.Fragment key={ai.escenaId ?? `pair-${pairIdx}`}>
+      {/* USER */}
+      <div className="flex justify-end">
+        <div className="max-w-2xl p-4 rounded-2xl bg-gradient-to-r from-primary to-gold text-primary-foreground shadow-lg">
+          <p className="whitespace-pre-wrap leading-relaxed">{user.content}</p>
+        </div>
+      </div>
+
+      {/* AI */}
+      <div className="flex">
+        <div className="max-w-2xl p-4 rounded-2xl bg-card/95 border border-gold/20 shadow-lg">
+          <p className="whitespace-pre-wrap leading-relaxed">{ai.content}</p>
+          {ai.escenaId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(ai.escenaId!);
+              }}
+              className={`mt-4 p-3 rounded-xl flex items-center gap-2 transition-all duration-300 text-sm font-bold ml-auto block group/fav ${
+                ai.isFavorite==="S"
+                  ? 'bg-gradient-to-r from-yellow-400 via-gold to-yellow-500 text-primary-foreground shadow-2xl shadow-yellow-500/50 border-4 border-yellow-400/50 hover:from-yellow-300 hover:to-gold hover:shadow-2xl hover:shadow-yellow-400/70 hover:scale-110 hover:rotate-3 ring-4 ring-yellow-400/30'
+                  : 'bg-gradient-to-r from-muted/70 to-card/80 text-muted-foreground/80 border border-muted/50 hover:from-gold/20 hover:to-yellow-50 hover:text-gold hover:border-gold/50 hover:shadow-md hover:shadow-gold/20 hover:scale-105'
+              }`}
+              title={
+                favorites.has(ai.escenaId!)
+                  ? 'Quitar de favoritos 💔'
+                  : '¡Mucha mierda! ⭐'
+              }
+            >
+              <span className="text-lg">💩</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </React.Fragment>
+  ))
+
                   )}
                   {chatLoading && (
                     <div className="flex justify-start">
