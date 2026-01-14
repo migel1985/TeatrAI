@@ -8,10 +8,13 @@ import { Theater, Sparkles, Plus, Menu, ChevronLeft, ChevronRight, MessageSquare
 import { Capitulo, getCapitulos, create_capitulo_db } from '@/services/capitulos';
 import { hablarConIa } from '@/services/ia';
 import { Escena, getEscenasByCapitulo } from '@/services/escenas';
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Obra = () => {
   const location = useLocation();
   const userId = location.state?.user_id;
+  const user_name = location.state?.user_name;
 
   // ✅ ESTADOS CAPÍTULOS
   const [capitulos, setCapitulos] = useState<Capitulo[]>([]);
@@ -36,6 +39,8 @@ const Obra = () => {
   // Layout states
   const [leftWidth, setLeftWidth] = useState(20);
   const chatRef = useRef<HTMLDivElement>(null);
+
+  const navigate = useNavigate();
 
   // 🔧 1. CARGAR CAPÍTULOS al montar componente
   useEffect(() => {
@@ -100,11 +105,19 @@ const Obra = () => {
   }, [selectedCapitulo?.id]);
 
   // 🔧 3. SCROLL AUTOMÁTICO del chat
-  useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [chatMessages, chatLoading]);
+  // ✅ SCROLL SIMPLE - Solo cuando AI responde
+    useEffect(() => {
+      if (chatRef.current && chatLoading) {
+        // Esperar un frame para que aparezca el loader
+        requestAnimationFrame(() => {
+          chatRef.current?.scrollTo({
+            top: chatRef.current.scrollHeight - 200, // 200px desde el fondo
+            behavior: 'smooth'
+          });
+        });
+      }
+    }, [chatLoading]);
+
 
   const handleCrearCapitulo = async () => {
     try {
@@ -162,7 +175,6 @@ const Obra = () => {
     setChatLoading(true);
 
     try {
-      alert("Miguel: " +   selectedCapitulo.descripcion)
       const response = await hablarConIa(
         mensajeEnviado,
         selectedCapitulo.descripcion,
@@ -266,21 +278,29 @@ const Obra = () => {
         <div className="bg-gradient-to-r from-primary via-gold/50 to-primary/80 backdrop-blur-sm border-b border-gold/30 p-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-3">
             <Theater className="w-8 h-8 text-primary-foreground" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gold/80 bg-clip-text text-transparent">
-              Mis Obras ({capitulos.length})
-            </h1>
+           
           </div>
-          <div className="flex items-center gap-2 text-sm text-gold/80">
-            <span>ID: {userId}</span>
-            <Button
+          <div className="flex items-center gap-3">
+          <Button
               onClick={() => setShowCreateModal(true)}
               disabled={chatLoading}
               className="bg-gradient-to-r from-gold to-primary hover:from-gold/90"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Capítulo
+              <Plus className="w-5 h-5" />
+          </Button>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gold/80">
+            <span>Hola <b>{user_name}</b>!</span>
+            <Button
+              onClick={() => navigate("/")}
+              disabled={chatLoading}
+              size="icon"
+              className="w-12 h-12 rounded-full hover:bg-gold/20 hover:scale-110 transition-all border-gold/30"
+            >
+              <LogOut className="w-6 h-6 text-gold" />
             </Button>
           </div>
+          
         </div>
 
         {/* Cuerpo dividido */}
@@ -409,11 +429,13 @@ const Obra = () => {
                       ? "¿Qué tienes hoy entre guiones?"
                       : "¡Crea tu primer capítulo!"}
                   </h3>
-                  <p>
-                    {capitulos.length > 0
-                      ? "Pulsa el botón + arriba para crear un nuevo capítulo en tu drama"
-                      : "Pulsa el botón + arriba para empezar con IA"}
-                  </p>
+                  <p style={{ whiteSpace: 'pre-line' }}>
+                  {capitulos.length > 0
+                    ? "No te quedes en las patas y sal a escena...\n\nPulsa el botón + de más arriba para crear\nun nuevo capítulo en tu drama"
+                    : "Pulsa el botón + arriba para empezar con IA"
+                  }
+                </p>
+
                 </div>
               </div>
             )}

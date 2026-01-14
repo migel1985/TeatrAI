@@ -10,7 +10,6 @@ export async function hablarConIa(
   capituloId?: number, 
   userId?: number
 ): Promise<IaResponse> {
-  alert(descCapitulo)
   const response = await fetch('http://13.53.89.36:8282/teatrapi/hablar_con_ia', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
