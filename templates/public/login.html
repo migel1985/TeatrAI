@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeatrAI - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --curtain-dark: hsl(0, 70%, 25%);
+      --curtain-mid: hsl(0, 65%, 35%);
+      --curtain-light: hsl(0, 70%, 40%);
+      --gold: hsl(45, 80%, 50%);
+      --gold-light: hsl(45, 80%, 60%);
+      --gold-dark: hsl(45, 70%, 40%);
+      --text-primary: #ffffff;
+      --text-muted: #a1a1aa;
+      --input-bg: #27272a;
+      --input-border: #3f3f46;
+      --accent: hsl(45, 80%, 50%);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Spotlight effects */
+    .spotlight {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.15;
+    }
+
+    .spotlight-left {
+      top: -50px;
+      left: 10%;
+      background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
+    }
+
+    .spotlight-right {
+      top: -50px;
+      right: 10%;
+      background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
+    }
+
+    /* Main title */
+    .main-title {
+      text-align: center;
+      margin-bottom: 1rem;
+      z-index: 10;
+    }
+
+    .main-title h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 40px hsla(45, 80%, 50%, 0.3);
+    }
+
+    .main-title p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Theater stage container */
+    .theater-stage {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      z-index: 10;
+    }
+
+    /* Top valance */
+    .valance {
+      position: absolute;
+      top: -20px;
+      left: -30px;
+      right: -30px;
+      height: 50px;
+      z-index: 20;
+    }
+
+    /* Curtains */
+    .curtain {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      z-index: 15;
+    }
+
+    .curtain-left {
+      left: -40px;
+    }
+
+    .curtain-right {
+      right: -40px;
+    }
+
+    /* Gold tie-backs */
+    .tieback {
+      position: absolute;
+      top: 40px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      z-index: 25;
+    }
+
+    .tieback-left {
+      left: 10px;
+    }
+
+    .tieback-right {
+      right: 10px;
+    }
+
+    /* Card */
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      padding: 2rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+
+    .card-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* Form */
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px hsla(45, 80%, 50%, 0.2);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--curtain-mid), var(--curtain-dark));
+      color: var(--text-primary);
+      box-shadow: 0 4px 12px hsla(0, 70%, 30%, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--curtain-light), var(--curtain-mid));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px hsla(0, 70%, 30%, 0.4);
+    }
+
+    .btn-google {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .btn-google:hover {
+      background: var(--input-border);
+    }
+
+    .btn-google svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--input-border);
+    }
+
+    .divider span {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Register link */
+    .register-link {
+      text-align: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--input-border);
+    }
+
+    .register-link p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .register-link a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      z-index: 10;
+    }
+
+    .footer .emoji {
+      font-size: 1.25rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .main-title h1 {
+        font-size: 2.5rem;
+      }
+
+      .theater-stage {
+        max-width: 100%;
+      }
+
+      .curtain {
+        width: 40px;
+      }
+
+      .curtain-left {
+        left: -20px;
+      }
+
+      .curtain-right {
+        right: -20px;
+      }
+
+      .login-card {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Spotlights -->
+  <div class="spotlight spotlight-left"></div>
+  <div class="spotlight spotlight-right"></div>
+
+  <!-- Main Title -->
+  <div class="main-title">
+    <h1>TeatrAI</h1>
+    <p>Consigue mierda en tu próxima función</p>
+  </div>
+
+  <!-- Theater Stage -->
+  <div class="theater-stage">
+    <!-- Top Valance -->
+    <svg class="valance" viewBox="0 0 400 40" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="valanceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="hsl(0, 70%, 35%)" />
+          <stop offset="50%" stop-color="hsl(0, 65%, 30%)" />
+          <stop offset="100%" stop-color="hsl(0, 70%, 25%)" />
+        </linearGradient>
+        <linearGradient id="goldTrim" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="hsl(45, 80%, 60%)" />
+          <stop offset="50%" stop-color="hsl(45, 80%, 50%)" />
+          <stop offset="100%" stop-color="hsl(45, 70%, 40%)" />
+        </linearGradient>
+      </defs>
+      <path d="M0,0 L400,0 L400,25 Q350,40 300,25 Q250,10 200,25 Q150,40 100,25 Q50,10 0,25 Z" fill="url(#valanceGradient)" />
+      <path d="M0,25 Q50,10 100,25 Q150,40 200,25 Q250,10 300,25 Q350,40 400,25 L400,30 Q350,45 300,30 Q250,15 200,30 Q150,45 100,30 Q50,15 0,30 Z" fill="url(#goldTrim)" />
+    </svg>
+
+    <!-- Left Curtain -->
+    <svg class="curtain curtain-left" viewBox="0 0 80 400" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="leftCurtain" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="hsl(0, 70%, 25%)" />
+          <stop offset="30%" stop-color="hsl(0, 65%, 35%)" />
+          <stop offset="60%" stop-color="hsl(0, 70%, 40%)" />
+          <stop offset="100%" stop-color="hsl(0, 65%, 30%)" />
+        </linearGradient>
+      </defs>
+      <path d="M80,0 Q60,50 70,100 Q80,150 65,200 Q50,250 60,300 Q70,350 55,400 L0,400 L0,0 Z" fill="url(#leftCurtain)" />
+      <path d="M70,0 Q55,100 65,200 Q75,300 60,400" stroke="hsl(0, 70%, 20%)" stroke-width="2" fill="none" opacity="0.5" />
+    </svg>
+
+    <!-- Right Curtain -->
+    <svg class="curtain curtain-right" viewBox="0 0 80 400" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="rightCurtain" x1="100%" y1="0%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="hsl(0, 70%, 25%)" />
+          <stop offset="30%" stop-color="hsl(0, 65%, 35%)" />
+          <stop offset="60%" stop-color="hsl(0, 70%, 40%)" />
+          <stop offset="100%" stop-color="hsl(0, 65%, 30%)" />
+        </linearGradient>
+      </defs>
+      <path d="M0,0 Q20,50 10,100 Q0,150 15,200 Q30,250 20,300 Q10,350 25,400 L80,400 L80,0 Z" fill="url(#rightCurtain)" />
+      <path d="M10,0 Q25,100 15,200 Q5,300 20,400" stroke="hsl(0, 70%, 20%)" stroke-width="2" fill="none" opacity="0.5" />
+    </svg>
+
+    <!-- Gold Tie-backs -->
+    <div class="tieback tieback-left"></div>
+    <div class="tieback tieback-right"></div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+      <div class="card-header">
+        <h2>🎭 ¡Mucha Mierda!</h2>
+        <p>
+          En el teatro, decir "buena suerte" trae mala suerte. Por eso nos deseamos 
+          "mucha mierda" — cuanta más mierda dejaban los caballos de los carruajes, 
+          más público había venido a verte.
+        </p>
+      </div>
+
+      <form class="login-form" action="/login" method="POST">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="actor@teatro.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          🎬 Entrar al Escenario
+        </button>
+
+        <div class="divider">
+          <span>o continúa con</span>
+        </div>
+
+        <button type="button" class="btn btn-google" onclick="window.location.href='/auth/google'">
+          <svg viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Regístrate con Google
+        </button>
+      </form>
+
+      <div class="register-link">
+        <p>¿Primera vez en el escenario? <a href="/register">Únete a la compañía</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p><span class="emoji">🎭</span> El escenario te espera <span class="emoji">🎭</span></p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+sudo docker pull migel1985/teatr-ai:vXXXXXX
+
+sudo docker run -d   --name teatr-ai   -p 80:80   migel1985/teatr-ai:XXXXXX
+
